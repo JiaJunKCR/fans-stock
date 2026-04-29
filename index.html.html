@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#2C2C2C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FANS+ Stock">
+<title>TRX FANS+ Stock</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+:root {
+  --y:#F2C200; --yl:#FFF8CC; --ch:#2C2C2C; --ow:#FAF8F2;
+  --be:#E8DCC8; --rd:#C83B2F; --gr:#1B6B3A; --dk:#1B3A4B;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:#111;min-height:100vh;overflow:hidden}
+
+.shell{max-width:390px;margin:0 auto;height:100vh;background:var(--ow);
+  display:flex;flex-direction:column;overflow:hidden;position:relative}
+
+/* status */
+.sbar{background:var(--ch);color:#fff;padding:10px 20px 8px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:12px;font-weight:600;flex-shrink:0}
+
+/* header */
+.hdr{background:var(--ch);padding:4px 20px 16px;flex-shrink:0}
+.hdr-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.brand{font-family:'DM Serif Display',serif;font-size:26px;color:#fff;line-height:1}
+.brand em{color:var(--y);font-style:normal}
+.brand-sub{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+.badge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:20px;
+  padding:5px 11px;font-size:11px;color:rgba(255,255,255,.75);font-weight:500}
+.meta{display:flex;gap:8px}
+.dp{flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;
+  padding:9px 12px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.dp input{background:none;border:none;outline:none;color:#fff;font-family:'DM Sans',sans-serif;
+  font-size:13px;font-weight:500;flex:1;cursor:pointer}
+.tp{background:var(--y);border-radius:10px;padding:9px 10px;display:flex;align-items:center;gap:4px;min-width:130px}
+.tp select{background:none;border:none;outline:none;color:var(--ch);font-family:'DM Sans',sans-serif;
+  font-size:12px;font-weight:700;-webkit-appearance:none;cursor:pointer;width:100%}
+
+/* sync status bar */
+.sync-bar{background:var(--ch);border-top:1px solid rgba(255,255,255,.08);
+  padding:5px 20px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#666;flex-shrink:0;transition:background .3s}
+.sync-dot.live{background:#22c55e}
+.sync-dot.loading{background:var(--y);animation:pulse 1s infinite}
+.sync-dot.err{background:var(--rd)}
+.sync-txt{font-size:10px;color:rgba(255,255,255,.45);font-weight:600;letter-spacing:.3px;flex:1}
+.sync-btn{font-size:10px;color:rgba(255,255,255,.35);cursor:pointer;padding:2px 6px;
+  border:1px solid rgba(255,255,255,.15);border-radius:4px;background:none;font-family:'DM Sans',sans-serif}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* tabs */
+.tabs{background:var(--ch);display:flex;padding:0 16px;gap:2px;flex-shrink:0;
+  border-bottom:1px solid rgba(255,255,255,.06);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;background:none;border:none;border-bottom:2px solid transparent;
+  color:rgba(255,255,255,.35);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;
+  padding:9px 8px;cursor:pointer;transition:all .18s;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap}
+.tab.on{color:var(--y);border-bottom-color:var(--y)}
+
+/* scroll */
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:88px;position:relative}
+
+/* loading overlay */
+.loading-overlay{position:absolute;inset:0;background:rgba(250,248,242,.92);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;z-index:20}
+.spinner{width:32px;height:32px;border:3px solid var(--be);border-top-color:var(--ch);
+  border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay p{font-size:13px;color:#888;font-weight:500}
+
+/* category */
+.cat-hdr{position:sticky;top:0;z-index:10;background:#fff;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 20px 9px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer}
+.cat-pill{display:flex;align-items:center;gap:8px;background:var(--ow);
+  border-radius:20px;padding:4px 12px 4px 8px;border:1.5px solid transparent}
+.cat-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+/* ★ Category name — 15px */
+.cat-nm{font-size:15px;font-weight:700;letter-spacing:.3px}
+.cat-ct{font-size:11px;color:#aaa;font-weight:500}
+.chev{width:16px;height:16px;stroke:#ccc;transition:transform .22s;flex-shrink:0}
+.cat-hdr.open .chev{transform:rotate(180deg)}
+
+/* item row */
+.item{display:flex;align-items:center;padding:11px 20px;gap:12px;
+  border-bottom:1px solid rgba(0,0,0,.04);background:#fff;transition:background .12s}
+.item:active{background:#f3f3f3}
+.item.alt{background:var(--ow)}
+.item.alt:active{background:#ebe8e0}
+.cbar{width:3px;height:34px;border-radius:2px;flex-shrink:0}
+.iinfo{flex:1;min-width:0}
+.ino{font-size:9px;color:#ccc;font-weight:700;margin-bottom:1px;letter-spacing:.5px}
+.iname{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iprice{font-size:11px;color:#bbb;margin-top:1px}
+
+/* stepper */
+.step{display:flex;align-items:center;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;
+  overflow:hidden;background:var(--ow);flex-shrink:0;transition:border-color .15s,background .15s}
+.step.on{border-color:var(--y);background:var(--yl)}
+.sb{width:32px;height:32px;border:none;background:none;font-size:17px;font-weight:300;
+  color:var(--ch);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  touch-action:manipulation;transition:background .1s}
+.sb:active{background:rgba(0,0,0,.08)}
+.sn{width:32px;text-align:center;font-size:13px;font-weight:700;border:none;background:none;
+  outline:none;font-family:'DM Sans',sans-serif;color:var(--ch)}
+.step.on .sn{color:#7B5E00}
+
+/* bottom bar */
+.bbar{position:absolute;bottom:0;left:0;right:0;background:#fff;
+  border-top:1px solid rgba(0,0,0,.08);padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  display:flex;align-items:center;gap:10px;box-shadow:0 -4px 20px rgba(0,0,0,.07);z-index:50}
+.chip{flex:1;display:flex;flex-direction:column;gap:1px}
+.clbl{font-size:9px;color:#aaa;font-weight:700;letter-spacing:.8px;text-transform:uppercase}
+.cval{font-size:19px;font-weight:700;font-family:'DM Serif Display',serif}
+.sbtn{background:var(--ch);color:#fff;border:none;border-radius:12px;
+  padding:13px 20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;touch-action:manipulation}
+.sbtn:active{transform:scale(.96)}
+.sbtn.go{background:var(--gr)}
+.sbtn:disabled{background:#ccc;cursor:not-allowed;transform:none}
+
+/* screens */
+.sc{display:none;flex:1;flex-direction:column;overflow:hidden}
+.sc.on{display:flex}
+.inner{flex:1;overflow-y:auto;padding:14px 16px 32px;-webkit-overflow-scrolling:touch}
+.stitle{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:#aaa;margin:18px 0 9px;padding:0 2px}
+.stitle:first-child{margin-top:2px}
+
+/* cards */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:2px}
+.card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 8px rgba(0,0,0,.05)}
+.card.full{grid-column:span 2}
+.card.yellow{background:var(--y)}
+.card.dark{background:var(--ch);color:#fff}
+.cicon{font-size:18px;margin-bottom:6px}
+.cval2{font-family:'DM Serif Display',serif;font-size:30px;line-height:1;margin-bottom:3px}
+.clbl2{font-size:10px;font-weight:700;color:#aaa;letter-spacing:.5px;text-transform:uppercase}
+.card.yellow .clbl2{color:rgba(0,0,0,.45)}
+.card.dark .clbl2{color:rgba(255,255,255,.45)}
+
+.crow{background:#fff;border-radius:11px;padding:11px 13px;margin-bottom:7px;
+  display:flex;align-items:center;gap:10px;box-shadow:0 1px 5px rgba(0,0,0,.04)}
+.crdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.crname{flex:1;font-size:13px;font-weight:600}
+.crqty{font-size:14px;font-weight:700;font-family:'DM Serif Display',serif}
+.crunit{font-size:11px;color:#aaa}
+
+.acard{background:#fff;border-radius:14px;padding:15px;margin-bottom:8px;cursor:pointer;
+  display:flex;align-items:center;gap:12px;box-shadow:0 1px 6px rgba(0,0,0,.05);transition:background .12s}
+.acard:active{background:#f5f5f5}
+.aicon{font-size:26px;flex-shrink:0}
+.atitle{font-size:14px;font-weight:700;margin-bottom:2px}
+.asub{font-size:11px;color:#aaa}
+.achev{font-size:18px;color:#ddd;margin-left:auto}
+
+/* history item */
+.hitem{background:#fff;border-radius:11px;padding:12px 14px;margin-bottom:8px;
+  display:flex;align-items:center;gap:10px;box-shadow:0 1px 5px rgba(0,0,0,.04);cursor:pointer}
+.hitem:active{background:#f5f5f5}
+.hdate{flex:1}
+.hdate-main{font-size:13px;font-weight:700}
+.hdate-sub{font-size:11px;color:#aaa;margin-top:2px}
+.hqty{font-size:18px;font-weight:700;font-family:'DM Serif Display',serif}
+.hunit{font-size:10px;color:#aaa}
+
+/* settings */
+.scard{background:#fff;border-radius:14px;overflow:hidden;margin-bottom:8px}
+.srow{display:flex;align-items:center;padding:13px 15px;border-bottom:1px solid rgba(0,0,0,.04);gap:11px;cursor:pointer}
+.srow:last-child{border-bottom:none}
+.sicon{font-size:17px;width:22px;text-align:center;flex-shrink:0}
+.slabel{flex:1;font-size:13px;font-weight:500}
+.sval{font-size:12px;color:#aaa}
+.schev{font-size:14px;color:#ddd}
+.tog{width:42px;height:24px;background:#ddd;border-radius:12px;position:relative;
+  cursor:pointer;transition:background .18s;flex-shrink:0}
+.tog.on{background:var(--gr)}
+.tog::after{content:'';position:absolute;width:18px;height:18px;background:#fff;
+  border-radius:50%;top:3px;left:3px;transition:left .18s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.tog.on::after{left:21px}
+
+/* setup screen */
+.setup{position:absolute;inset:0;background:var(--ch);z-index:100;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px}
+.setup.hidden{display:none}
+.setup-logo{font-family:'DM Serif Display',serif;font-size:36px;color:#fff;margin-bottom:4px}
+.setup-logo em{color:var(--y);font-style:normal}
+.setup-sub{font-size:11px;color:rgba(255,255,255,.4);letter-spacing:2px;text-transform:uppercase;margin-bottom:32px}
+.setup-label{font-size:12px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:1px;
+  text-transform:uppercase;margin-bottom:8px;align-self:flex-start}
+.setup-input{width:100%;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);
+  border-radius:12px;padding:14px 16px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;
+  outline:none;margin-bottom:16px}
+.setup-input:focus{border-color:var(--y)}
+.setup-input::placeholder{color:rgba(255,255,255,.25)}
+.setup-hint{font-size:11px;color:rgba(255,255,255,.3);margin-bottom:32px;line-height:1.6;align-self:flex-start}
+.setup-btn{width:100%;background:var(--y);color:var(--ch);border:none;border-radius:12px;
+  padding:15px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer}
+.setup-skip{margin-top:14px;font-size:12px;color:rgba(255,255,255,.3);cursor:pointer;text-decoration:underline}
+
+/* nav */
+.nav{display:grid;grid-template-columns:repeat(4,1fr);background:#fff;
+  border-top:1px solid rgba(0,0,0,.07);padding-bottom:env(safe-area-inset-bottom);
+  flex-shrink:0;box-shadow:0 -2px 14px rgba(0,0,0,.05)}
+.nb{display:flex;flex-direction:column;align-items:center;padding:9px 0 7px;
+  border:none;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .14s}
+.ni{font-size:20px}
+.nl{font-size:9px;font-weight:700;color:#bbb;letter-spacing:.3px;text-transform:uppercase;margin-top:2px}
+.nb.on .nl{color:var(--ch)}
+.nd{width:4px;height:4px;background:var(--y);border-radius:50%;margin-top:3px;opacity:0;transition:opacity .15s}
+.nb.on .nd{opacity:1}
+
+/* cat body collapse */
+.cbody{overflow:hidden;transition:max-height .28s ease;max-height:3000px}
+.cbody.shut{max-height:0}
+
+/* install banner */
+.ibanner{display:none;background:var(--y);color:var(--ch);padding:9px 16px;font-size:12px;
+  font-weight:700;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0}
+.ibanner.show{display:flex}
+.ibtn{background:var(--ch);color:#fff;border:none;border-radius:8px;padding:6px 12px;
+  font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+
+/* toast */
+.toast{position:fixed;top:72px;left:50%;transform:translateX(-50%) translateY(-16px);
+  background:var(--ch);color:#fff;padding:11px 18px;border-radius:12px;font-size:13px;
+  font-weight:600;opacity:0;transition:all .28s;pointer-events:none;z-index:999;
+  white-space:nowrap;box-shadow:0 6px 28px rgba(0,0,0,.28)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--gr)}
+.toast.err{background:var(--rd)}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- SETUP SCREEN (shown if no API URL saved) -->
+  <div class="setup" id="setup">
+    <div class="setup-logo">TRX <em>FANS+</em></div>
+    <div class="setup-sub">Stock Manager · First Setup</div>
+    <div class="setup-label">Google Apps Script URL</div>
+    <input class="setup-input" id="setupUrl" type="url"
+           placeholder="https://script.google.com/macros/s/…/exec">
+    <div class="setup-hint">
+      1. Open your Google Sheet → Extensions → Apps Script<br>
+      2. Paste the Code.gs file content → Save<br>
+      3. Run "setupSheets" once<br>
+      4. Deploy → New Deployment → Web App<br>
+      5. Copy the URL and paste it above
+    </div>
+    <button class="setup-btn" onclick="saveSetup()">Connect to Google Sheets →</button>
+    <div class="setup-skip" onclick="skipSetup()">Continue offline (no sync)</div>
+  </div>
+
+  <!-- INSTALL BANNER -->
+  <div class="ibanner" id="ibanner">
+    <span>📲 Add to Home Screen</span>
+    <button class="ibtn" id="ibtn">Install</button>
+    <button class="ibtn" style="background:rgba(0,0,0,.15);color:var(--ch)"
+            onclick="document.getElementById('ibanner').classList.remove('show')">✕</button>
+  </div>
+
+  <!-- STATUS -->
+  <div class="sbar">
+    <span id="stime">9:41</span>
+    <span>📶 🔋</span>
+  </div>
+
+  <!-- SCREEN: ENTRY -->
+  <div class="sc on" id="sc-entry">
+    <div class="hdr">
+      <div class="hdr-row">
+        <div>
+          <div class="brand">TRX <em>FANS+</em></div>
+          <div class="brand-sub">Stock Manager</div>
+        </div>
+        <div class="badge" id="todayBadge"></div>
+      </div>
+      <div class="meta">
+        <div class="dp">
+          <span style="opacity:.5;font-size:13px">📅</span>
+          <input type="date" id="entryDate">
+        </div>
+        <div class="tp">
+          <span style="font-size:13px">📋</span>
+          <select id="entryType">
+            <option value="in_ck">IN — CK</option>
+            <option value="in_arc">IN — Arcoris</option>
+            <option value="display">Display</option>
+            <option value="out">Transfer OUT</option>
+            <option value="wastage">Wastage</option>
+            <option value="ing_waste">Ingr. Wastage</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="sync-bar">
+      <div class="sync-dot" id="syncDot"></div>
+      <div class="sync-txt" id="syncTxt">Connecting…</div>
+      <button class="sync-btn" onclick="loadItems(true)">↻ Sync</button>
+    </div>
+
+    <div class="tabs" id="tabBar"></div>
+
+    <div class="scroll" id="itemList">
+      <div class="loading-overlay" id="loadOverlay">
+        <div class="spinner"></div>
+        <p>Loading items from Google Sheets…</p>
+      </div>
+    </div>
+
+    <div class="bbar">
+      <div class="chip">
+        <div class="clbl">Items</div>
+        <div class="cval" id="cc">0</div>
+      </div>
+      <div class="chip">
+        <div class="clbl">Total Qty</div>
+        <div class="cval" id="cq">0</div>
+      </div>
+      <button class="sbtn" id="saveBtn" onclick="doSave()">💾 Save</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: SUMMARY -->
+  <div class="sc" id="sc-summary">
+    <div class="hdr" style="padding-bottom:14px">
+      <div class="brand" style="font-size:22px">Overview</div>
+      <div class="brand-sub" style="margin-top:5px" id="sumDate"></div>
+    </div>
+    <div class="inner">
+      <div class="stitle">Today's Stats</div>
+      <div class="g2">
+        <div class="card yellow"><div class="cicon">📦</div><div class="cval2" id="s-in">0</div><div class="clbl2">Stock IN</div></div>
+        <div class="card"><div class="cicon">🏪</div><div class="cval2" id="s-dp">0</div><div class="clbl2">Display</div></div>
+        <div class="card"><div class="cicon">🚚</div><div class="cval2" id="s-out">0</div><div class="clbl2">Transfer OUT</div></div>
+        <div class="card dark"><div class="cicon">✅</div><div class="cval2" id="s-sold">0</div><div class="clbl2">Est. Sold</div></div>
+      </div>
+      <div class="stitle">By Category</div>
+      <div id="catSum"></div>
+      <div class="stitle">Sync & Export</div>
+      <div class="acard" onclick="syncFromSheets()">
+        <div class="aicon">☁️</div>
+        <div><div class="atitle">Sync from Google Sheets</div><div class="asub">Pull latest entries from shared sheet</div></div>
+        <div class="achev">›</div>
+      </div>
+      <div class="acard" onclick="exportCSV()">
+        <div class="aicon">📊</div>
+        <div><div class="atitle">Export CSV</div><div class="asub">For TRX_FANS_Generator.py</div></div>
+        <div class="achev">›</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN: HISTORY -->
+  <div class="sc" id="sc-history">
+    <div class="hdr" style="padding-bottom:14px">
+      <div class="brand" style="font-size:22px">History</div>
+      <div class="brand-sub" style="margin-top:5px">Recent entries</div>
+    </div>
+    <div class="inner" id="histInner">
+      <div class="stitle">Past Entries</div>
+      <div id="histList"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: SETTINGS -->
+  <div class="sc" id="sc-settings">
+    <div class="hdr" style="padding-bottom:14px">
+      <div class="brand" style="font-size:22px">Settings</div>
+      <div class="brand-sub" style="margin-top:5px">Configuration</div>
+    </div>
+    <div class="inner">
+      <div class="stitle">Google Sheets Connection</div>
+      <div class="scard">
+        <div class="srow" onclick="showUrlEdit()">
+          <div class="sicon">🔗</div>
+          <div class="slabel">Apps Script URL</div>
+          <div class="sval" id="urlPreview">Not set</div>
+          <div class="schev">›</div>
+        </div>
+        <div class="srow" onclick="loadItems(true)">
+          <div class="sicon">↻</div>
+          <div class="slabel">Force sync items from Sheets</div>
+          <div class="sval" id="lastSync">–</div>
+        </div>
+        <div class="srow" onclick="openSheet()">
+          <div class="sicon">📄</div>
+          <div class="slabel">Open Google Sheet</div>
+          <div class="sval">↗</div>
+        </div>
+      </div>
+
+      <div class="stitle">Notifications</div>
+      <div class="scard">
+        <div class="srow"><div class="sicon">🔔</div><div class="slabel">Daily reminder</div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="srow"><div class="sicon">⚠️</div><div class="slabel">Negative stock alert</div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+      </div>
+
+      <div class="stitle">Data</div>
+      <div class="scard">
+        <div class="srow" onclick="exportCSV()"><div class="sicon">📊</div><div class="slabel">Export all entries as CSV</div></div>
+        <div class="srow" onclick="if(confirm('Clear local cache?')){localStorage.removeItem('fans_items');toast('Cache cleared');}">
+          <div class="sicon">🗑️</div><div class="slabel">Clear local item cache</div>
+        </div>
+      </div>
+
+      <div class="stitle">About</div>
+      <div class="scard">
+        <div class="srow"><div class="sicon">📦</div><div class="slabel">Items loaded</div><div class="sval" id="itemCount">–</div></div>
+        <div class="srow"><div class="sicon">ℹ️</div><div class="slabel">Version</div><div class="sval">2.0 PWA + Sheets</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <button class="nb on" onclick="go('entry',this)"><div class="ni">📝</div><div class="nl">Entry</div><div class="nd"></div></button>
+    <button class="nb" onclick="go('summary',this)"><div class="ni">📊</div><div class="nl">Summary</div><div class="nd"></div></button>
+    <button class="nb" onclick="go('history',this)"><div class="ni">📅</div><div class="nl">History</div><div class="nd"></div></button>
+    <button class="nb" onclick="go('settings',this)"><div class="ni">⚙️</div><div class="nl">Settings</div><div class="nd"></div></button>
+  </nav>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ CONFIG ═════════════════════════════════════════════════════
+const CAT_COLORS = {
+  'Roll Cake':'#5C2D91','Cup':'#1A5276','Puff':'#784212',
+  'Cheesecake':'#1B6B3A','Mont Blanc':'#7B5E00','Tart':'#8C1515',
+  'Baked Sweets':'#2E5EAA','Souffle':'#4A1C6E','Castella':'#1B5E20',
+  'Oyatsu':'#4E342E','Mochi Ichigo':'#AD1457','Mochi':'#6A1B9A',
+  'Hattendo Buns':'#00695C','Butter Sand':'#E65100',
+  'Cookie':'#4A4000','Order Cake':'#37474F','Cup Cake Order':'#880E4F',
+};
+
+// ══ STATE ══════════════════════════════════════════════════════
+let API_URL    = localStorage.getItem('fans_api_url') || '';
+let ITEMS      = JSON.parse(localStorage.getItem('fans_items') || '[]');
+let CATS       = [];
+let qty        = {};
+let filter     = 'all';
+let localLog   = JSON.parse(localStorage.getItem('fans_log_v2') || '[]');
+let syncQueue  = JSON.parse(localStorage.getItem('fans_queue') || '[]');
+let isSaving   = false;
+
+// ══ INIT ═══════════════════════════════════════════════════════
+const now = new Date();
+const todayISO = now.toISOString().split('T')[0];
+document.getElementById('entryDate').value = todayISO;
+document.getElementById('todayBadge').textContent =
+  now.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+document.getElementById('sumDate').textContent =
+  now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+setInterval(()=>{
+  const t=new Date();
+  document.getElementById('stime').textContent=t.getHours()+':'+(t.getMinutes()+'').padStart(2,'0');
+},20000);
+document.getElementById('stime').textContent=
+  now.getHours()+':'+(now.getMinutes()+'').padStart(2,'0');
+
+// ══ SETUP ══════════════════════════════════════════════════════
+function saveSetup() {
+  const url = document.getElementById('setupUrl').value.trim();
+  if (!url.includes('script.google.com')) { toast('Please enter a valid Apps Script URL','err'); return; }
+  API_URL = url;
+  localStorage.setItem('fans_api_url', url);
+  document.getElementById('setup').classList.add('hidden');
+  loadItems(true);
+}
+function skipSetup() {
+  document.getElementById('setup').classList.add('hidden');
+  setSyncStatus('offline','Offline mode — no Google Sheets sync');
+  if (ITEMS.length) { buildTabs(); buildList(); }
+  else showLoadOverlay('No items loaded. Connect to Google Sheets in Settings.');
+}
+function showUrlEdit() {
+  const url = prompt('Paste your Apps Script Web App URL:', API_URL);
+  if (url && url.includes('script.google.com')) {
+    API_URL = url.trim();
+    localStorage.setItem('fans_api_url', API_URL);
+    document.getElementById('urlPreview').textContent = '✓ Set';
+    loadItems(true);
+  }
+}
+function openSheet() {
+  // Extract sheet ID from API URL if possible (not always possible), open sheets
+  window.open('https://sheets.google.com', '_blank');
+}
+
+// ══ SYNC STATUS ════════════════════════════════════════════════
+function setSyncStatus(state, txt) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncTxt');
+  dot.className = 'sync-dot ' + state;
+  lbl.textContent = txt;
+}
+
+// ══ LOAD ITEMS FROM SHEETS ═════════════════════════════════════
+async function loadItems(force=false) {
+  // ALWAYS load built-in items first so app works immediately
+  if (ITEMS.length === 0) {
+    ITEMS = BUILTIN_ITEMS;
+    CATS  = [...new Set(ITEMS.map(i=>i.cat))];
+  }
+  buildTabs();
+  buildList();
+  hideLoadOverlay();
+
+  // If no API URL, just use built-in silently
+  if (!API_URL) {
+    setSyncStatus('offline', 'Offline mode · ' + ITEMS.length + ' items built-in');
+    return;
+  }
+
+  // Try to sync from Sheets in background (don't block UI)
+  if (!force) {
+    setSyncStatus('live', ITEMS.length + ' items ready · tap ↻ to sync Sheets');
+    return;
+  }
+
+  // Force sync from Sheets
+  setSyncStatus('loading', 'Syncing from Google Sheets…');
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000); // 8s timeout
+    const res = await fetch(
+      API_URL + '?action=getItems',
+      { signal: controller.signal, cache: 'no-store' }
+    );
+    clearTimeout(timer);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    ITEMS = data.items;
+    CATS  = data.cats;
+    localStorage.setItem('fans_items', JSON.stringify(ITEMS));
+    localStorage.setItem('fans_items_ts', new Date().toISOString());
+    const ts = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    setSyncStatus('live', ITEMS.length + ' items · synced ' + ts);
+    document.getElementById('itemCount').textContent = ITEMS.length + ' items';
+    document.getElementById('lastSync').textContent  = ts;
+    document.getElementById('urlPreview').textContent = '✓ Connected';
+    buildTabs();
+    buildList();
+    flushQueue();
+    toast('☁️ Synced ' + ITEMS.length + ' items from Sheets', 'ok');
+  } catch(e) {
+    const msg = e.name === 'AbortError' ? 'Sheets timed out' : 'Sheets unreachable';
+    setSyncStatus('err', msg + ' · using built-in items');
+    toast('⚠️ ' + msg + ' — items still available', 'err');
+    // Keep showing whatever items we have
+    buildTabs();
+    buildList();
+  }
+}
+
+function showLoadOverlay(msg) {
+  const o = document.getElementById('loadOverlay');
+  o.style.display = 'flex';
+  o.querySelector('p').textContent = msg || 'Loading…';
+}
+function hideLoadOverlay() {
+  document.getElementById('loadOverlay').style.display = 'none';
+}
+
+// ══ SYNC SUMMARY FROM SHEETS ════════════════════════════════════
+async function syncFromSheets() {
+  if (!API_URL) { toast('No API URL set', 'err'); return; }
+  setSyncStatus('loading', 'Fetching entries from Sheets…');
+  try {
+    const date = document.getElementById('entryDate').value;
+    const res  = await fetch(`${API_URL}?action=getEntries&date=${date}`, { cache:'no-store' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    // Merge sheet entries into local log (avoid duplicates by entry ID)
+    const existingIds = new Set(localLog.map(e=>e.id).filter(Boolean));
+    let added = 0;
+    data.entries.forEach(e => {
+      if (!existingIds.has(e.id)) { localLog.push(e); added++; }
+    });
+    localStorage.setItem('fans_log_v2', JSON.stringify(localLog));
+    setSyncStatus('live', 'Synced ✓');
+    toast(`☁️ Synced ${added} new entries from Sheets`, 'ok');
+    buildSummary();
+  } catch(e) {
+    setSyncStatus('err', 'Sync failed');
+    toast('Sync failed: ' + e.message, 'err');
+  }
+}
+
+// ══ TABS ════════════════════════════════════════════════════════
+function buildTabs() {
+  const bar = document.getElementById('tabBar');
+  bar.innerHTML = '';
+  const tabs = ['All', ...CATS.slice(0,6)]; // All + first 6 cats
+  tabs.forEach((c,i) => {
+    const b = document.createElement('button');
+    b.className = 'tab' + (i===0?' on':'');
+    b.textContent = c==='All'?'All':c.split(' ')[0];
+    b.onclick = () => filterBy(c==='All'?'all':c, b);
+    bar.appendChild(b);
+  });
+}
+
+// ══ BUILD ITEM LIST ═════════════════════════════════════════════
+function buildList(f) {
+  if (f !== undefined) filter = f;
+  const list = document.getElementById('itemList');
+  // Keep loading overlay if present
+  const overlay = document.getElementById('loadOverlay');
+  list.innerHTML = '';
+  list.appendChild(overlay);
+
+  const cats = CATS.length ? CATS : [...new Set(ITEMS.map(i=>i.cat))];
+  cats.forEach(cat => {
+    const items = ITEMS.filter(i => i.cat===cat);
+    if (filter!=='all' && cat!==filter) return;
+    const color = CAT_COLORS[cat] || '#555';
+    const bodyId = 'b_'+cat.replace(/\W/g,'_');
+    const sec = document.createElement('div');
+    sec.innerHTML = `
+      <div class="cat-hdr open" onclick="toggleCat(this,'${bodyId}')">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="cat-pill" style="border-color:${color}25">
+            <div class="cat-dot" style="background:${color}"></div>
+            <div class="cat-nm" style="color:${color}">${cat}</div>
+          </div>
+          <div class="cat-ct">${items.length} items</div>
+        </div>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="cbody" id="${bodyId}"></div>`;
+    const body = sec.querySelector('.cbody');
+    items.forEach((item,i) => {
+      const q = qty[item.no] || 0;
+      const row = document.createElement('div');
+      row.className = 'item'+(i%2?' alt':'');
+      row.id = 'r_'+item.no;
+      row.innerHTML = `
+        <div class="cbar" style="background:${color}"></div>
+        <div class="iinfo">
+          <div class="ino">#${item.no}</div>
+          <div class="iname">${item.name}</div>
+          ${item.price?`<div class="iprice">HKD ${item.price}</div>`:''}
+        </div>
+        <div class="step${q>0?' on':''}" id="s_${item.no}">
+          <button class="sb" onclick="adj(${item.no},-1)">−</button>
+          <input class="sn" id="n_${item.no}" value="${q||''}" placeholder="0"
+                 type="number" min="0"
+                 onchange="setQ(${item.no},this.value)" onfocus="this.select()">
+          <button class="sb" onclick="adj(${item.no},1)">+</button>
+        </div>`;
+      body.appendChild(row);
+    });
+    list.appendChild(sec);
+  });
+}
+
+function toggleCat(h,id) {
+  h.classList.toggle('open');
+  document.getElementById(id).classList.toggle('shut');
+}
+function filterBy(f,btn) {
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  buildList(f);
+}
+
+// ══ QTY ════════════════════════════════════════════════════════
+function adj(no,d){ qty[no]=Math.max(0,(qty[no]||0)+d); refreshRow(no); }
+function setQ(no,v){ qty[no]=Math.max(0,parseInt(v)||0); refreshRow(no); }
+function refreshRow(no){
+  const q=qty[no]||0;
+  const inp=document.getElementById('n_'+no);
+  const st=document.getElementById('s_'+no);
+  if(!inp) return;
+  inp.value=q||''; inp.placeholder='0';
+  st.classList.toggle('on',q>0);
+  updateBar();
+}
+function updateBar(){
+  const vals=Object.values(qty).filter(v=>v>0);
+  document.getElementById('cc').textContent=vals.length;
+  document.getElementById('cq').textContent=vals.reduce((a,b)=>a+b,0);
+  const btn=document.getElementById('saveBtn');
+  btn.classList.toggle('go',vals.length>0);
+  btn.disabled=isSaving;
+}
+
+// ══ SAVE ═══════════════════════════════════════════════════════
+async function doSave() {
+  if (isSaving) return;
+  const date = document.getElementById('entryDate').value;
+  const type = document.getElementById('entryType').value;
+  const rows = Object.entries(qty).filter(([,v])=>v>0).map(([no,q])=>{
+    const item = ITEMS.find(i=>i.no==no);
+    return { no:+no, cat:item.cat, name:item.name, qty:q, date, type,
+             id: Math.random().toString(36).substr(2,9) };
+  });
+  if (!rows.length) { toast('No quantities entered','err'); return; }
+
+  isSaving = true;
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.textContent = '⏳ Saving…';
+
+  // Save to local log immediately
+  localLog.push(...rows);
+  localStorage.setItem('fans_log_v2', JSON.stringify(localLog));
+
+  // Try to push to Google Sheets
+  let synced = false;
+  if (API_URL) {
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action:'saveEntries', entries:rows })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        synced = true;
+        setSyncStatus('live', `Saved to Sheets ✓ ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`);
+      } else throw new Error(data.error);
+    } catch(e) {
+      // Queue for later
+      syncQueue.push(...rows);
+      localStorage.setItem('fans_queue', JSON.stringify(syncQueue));
+      setSyncStatus('err', `Saved locally · will sync when online`);
+      toast(`💾 Saved locally (${syncQueue.length} queued for sync)`);
+    }
+  }
+
+  if (synced) toast(`✅ ${rows.length} item${rows.length>1?'s':''} saved to Sheets!`, 'ok');
+  else if (!API_URL) toast(`💾 ${rows.length} items saved locally`, 'ok');
+
+  qty = {}; buildList(); updateBar();
+  isSaving = false;
+  btn.disabled = false; btn.textContent = '💾 Save';
+}
+
+// ══ FLUSH QUEUE (retry offline saves) ══════════════════════════
+async function flushQueue() {
+  if (!syncQueue.length || !API_URL) return;
+  try {
+    const res = await fetch(API_URL, {
+      method:'POST',
+      body: JSON.stringify({ action:'saveEntries', entries:syncQueue })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      toast(`☁️ ${syncQueue.length} queued entries synced!`, 'ok');
+      syncQueue = [];
+      localStorage.setItem('fans_queue', JSON.stringify(syncQueue));
+    }
+  } catch(e) { /* still offline */ }
+}
+
+// ══ SUMMARY ════════════════════════════════════════════════════
+function buildSummary() {
+  const date = document.getElementById('entryDate').value;
+  const tod  = localLog.filter(e=>e.date===date);
+  const sum  = t => tod.filter(e=>e.type===t).reduce((a,e)=>a+e.qty,0);
+  document.getElementById('s-in').textContent   = sum('in_ck')+sum('in_arc');
+  document.getElementById('s-dp').textContent   = sum('display');
+  document.getElementById('s-out').textContent  = sum('out');
+  document.getElementById('s-sold').textContent = Math.max(0,sum('display')-sum('wastage'));
+
+  const cats = CATS.length ? CATS : [...new Set(ITEMS.map(i=>i.cat))];
+  const div  = document.getElementById('catSum');
+  div.innerHTML='';
+  cats.forEach(cat=>{
+    const q=tod.filter(e=>e.cat===cat).reduce((a,e)=>a+e.qty,0);
+    if(!q) return;
+    const c=CAT_COLORS[cat]||'#555';
+    const d=document.createElement('div'); d.className='crow';
+    d.innerHTML=`<div class="crdot" style="background:${c}"></div>
+      <div class="crname">${cat}</div>
+      <div><span class="crqty">${q}</span> <span class="crunit">pcs</span></div>`;
+    div.appendChild(d);
+  });
+  if(!div.children.length)
+    div.innerHTML='<div style="text-align:center;padding:28px;color:#bbb;font-size:13px">No entries yet today</div>';
+}
+
+// ══ HISTORY ════════════════════════════════════════════════════
+function buildHistory() {
+  const hist=document.getElementById('histList');
+  hist.innerHTML='';
+  const byDate={};
+  localLog.forEach(e=>{(byDate[e.date]||(byDate[e.date]=[])).push(e);});
+  const dates=Object.keys(byDate).sort().reverse();
+  if(!dates.length){
+    hist.innerHTML='<div style="text-align:center;padding:40px;color:#bbb;font-size:13px">No entries yet</div>';
+    return;
+  }
+  dates.slice(0,30).forEach(d=>{
+    const es=byDate[d]; const total=es.reduce((a,e)=>a+e.qty,0);
+    const div=document.createElement('div'); div.className='hitem';
+    const types=[...new Set(es.map(e=>e.type))].map(t=>({
+      in_ck:'IN(CK)',in_arc:'IN(Arc)',display:'Display',
+      out:'OUT',wastage:'Waste',ing_waste:'Ingr.'
+    }[t]||t)).join(' · ');
+    div.innerHTML=`<div style="font-size:22px">📅</div>
+      <div class="hdate">
+        <div class="hdate-main">${d}</div>
+        <div class="hdate-sub">${es.length} entries · ${types}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="hqty">${total}</div>
+        <div class="hunit">pcs</div>
+      </div>`;
+    hist.appendChild(div);
+  });
+}
+
+// ══ EXPORT CSV ═════════════════════════════════════════════════
+function exportCSV() {
+  if(!localLog.length){toast('No entries to export','err');return;}
+  const hdr='Date,Type,No,Category,Item,Qty';
+  const lines=localLog.map(r=>`${r.date},${r.type},${r.no},"${r.cat}","${r.name}",${r.qty}`);
+  const blob=new Blob([hdr+'\n'+lines.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`FANS_Entries_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  toast('📊 CSV downloaded!','ok');
+}
+
+// ══ NAVIGATION ═════════════════════════════════════════════════
+function go(name,btn){
+  document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('sc-'+name).classList.add('on');
+  btn.classList.add('on');
+  if(name==='summary'){ buildSummary(); }
+  if(name==='history'){ buildHistory(); }
+}
+
+// ══ TOAST ══════════════════════════════════════════════════════
+function toast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast'+(type?' '+type:'');
+  requestAnimationFrame(()=>t.classList.add('show'));
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ══ PWA INSTALL ════════════════════════════════════════════════
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault(); deferredPrompt=e;
+  document.getElementById('ibanner').classList.add('show');
+});
+document.getElementById('ibtn').onclick=async()=>{
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const{outcome}=await deferredPrompt.userChoice;
+  if(outcome==='accepted') toast('✅ App installed!','ok');
+  deferredPrompt=null;
+  document.getElementById('ibanner').classList.remove('show');
+};
+
+// ══ BUILT-IN ITEMS (fallback, always works offline) ════════════
+const BUILTIN_ITEMS = [
+  {no:1,  cat:'Roll Cake',    name:'Nama-Cream Roll Whole',         price:50},
+  {no:2,  cat:'Roll Cake',    name:'Nama-Cream Roll Slice',         price:10},
+  {no:3,  cat:'Roll Cake',    name:'Nama Chocolate Roll Whole',     price:60},
+  {no:4,  cat:'Roll Cake',    name:'Nama Chocolate Roll Slice',     price:12},
+  {no:5,  cat:'Roll Cake',    name:'Earl Grey Roll Whole',          price:58},
+  {no:6,  cat:'Roll Cake',    name:'Earl Grey Roll Slice',          price:12},
+  {no:7,  cat:'Roll Cake',    name:'Matcha White Choc Roll Whole',  price:70},
+  {no:8,  cat:'Roll Cake',    name:'Matcha White Choc Roll Slice',  price:14},
+  {no:9,  cat:'Roll Cake',    name:'Decoration Roll',               price:null},
+  {no:10, cat:'Roll Cake',    name:'Salted Caramel Roll Slice',     price:9.8},
+  {no:13, cat:'Cup',          name:'Crème Brulee',                  price:20},
+  {no:14, cat:'Cup',          name:'Fresh Pudding',                 price:8},
+  {no:15, cat:'Cup',          name:'Strawberry Mousse',             price:17},
+  {no:16, cat:'Cup',          name:'Tiramisu',                      price:16},
+  {no:17, cat:'Cup',          name:'Cupcake',                       price:6},
+  {no:18, cat:'Cup',          name:'Parfait Matcha',                price:10},
+  {no:19, cat:'Cup',          name:'Parfait Chocolate',             price:10},
+  {no:20, cat:'Cup',          name:'Parfait Strawberry',            price:10},
+  {no:21, cat:'Cup',          name:'Parfait Raspberry Cheese',      price:10},
+  {no:22, cat:'Cup',          name:'Parfait Mango Cheese',          price:10},
+  {no:24, cat:'Puff',         name:'POP Puff Box',                  price:20},
+  {no:25, cat:'Puff',         name:'Cream Puff',                    price:8},
+  {no:26, cat:'Puff',         name:'Eclair',                        price:10},
+  {no:28, cat:'Cheesecake',   name:'Rare Cheesecake',               price:20},
+  {no:29, cat:'Cheesecake',   name:'Burnt Cheesecake Original',     price:17},
+  {no:30, cat:'Cheesecake',   name:'Burnt Cheesecake Chocolate',    price:18},
+  {no:31, cat:'Cheesecake',   name:'Burnt Cheesecake Matcha',       price:18},
+  {no:32, cat:'Cheesecake',   name:'Burnt Cheesecake Earl Grey',    price:17},
+  {no:33, cat:'Cheesecake',   name:'Burnt Cheesecake Original 5"',  price:56},
+  {no:34, cat:'Cheesecake',   name:'Burnt Cheesecake Chocolate 5"', price:58},
+  {no:35, cat:'Cheesecake',   name:'Burnt Cheesecake Matcha 5"',    price:58},
+  {no:36, cat:'Cheesecake',   name:'Burnt Cheesecake Marble',       price:56},
+  {no:37, cat:'Cheesecake',   name:'Burnt Cheesecake Salted Caramel',price:17},
+  {no:38, cat:'Cheesecake',   name:'Hanjuku Cheesecake 4in1',       price:18},
+  {no:39, cat:'Cheesecake',   name:'Hanjuku Cheesecake SC 4in1',    price:18.8},
+  {no:41, cat:'Mont Blanc',   name:'Premium Chestnut Mont Blanc',   price:22},
+  {no:42, cat:'Mont Blanc',   name:'Mont Blanc 5"',                 price:110},
+  {no:44, cat:'Tart',         name:'Strawberry Tart',               price:17},
+  {no:45, cat:'Tart',         name:'Strawberry Tart 12cm',          price:78},
+  {no:48, cat:'Baked Sweets', name:'Gateau Chocolate Slice',        price:16},
+  {no:49, cat:'Baked Sweets', name:'Gateau Chocolate 6"',           price:100},
+  {no:50, cat:'Baked Sweets', name:'Strawberry Shortcake Slice',    price:25},
+  {no:51, cat:'Baked Sweets', name:'Strawberry Shortcake 6"',       price:100},
+  {no:57, cat:'Souffle',      name:'Soufflé Cheesecake Original',   price:55},
+  {no:58, cat:'Souffle',      name:'Soufflé Cheesecake Matcha',     price:60},
+  {no:60, cat:'Castella',     name:'Castella Cake Box 3pcs',        price:20},
+  {no:61, cat:'Castella',     name:'Castella Cake Box 6pcs',        price:38},
+  {no:62, cat:'Oyatsu',       name:'Oyatsu Set',                    price:null},
+  {no:64, cat:'Mochi Ichigo', name:'Ichigo Daifuku',                price:10},
+  {no:65, cat:'Mochi Ichigo', name:'Pink Ichigo Daifuku',           price:10},
+  {no:66, cat:'Mochi Ichigo', name:'Chocolate Ichigo Daifuku',      price:10},
+  {no:67, cat:'Mochi Ichigo', name:'Ichigo Daifuku Pink',           price:10},
+  {no:68, cat:'Mochi Ichigo', name:'Choc Ichigo Daifuku (Chilled)', price:10},
+  {no:69, cat:'Mochi',        name:'Matcha Chocolate Mochi',        price:7},
+  {no:70, cat:'Mochi',        name:'Dark Chocolate Mochi',          price:7},
+  {no:71, cat:'Mochi',        name:'Orange Chocolate Mochi',        price:7},
+  {no:72, cat:'Mochi',        name:'Strawberry Mochi',              price:7},
+  {no:73, cat:'Mochi',        name:'Melon Mochi',                   price:7},
+  {no:74, cat:'Mochi',        name:'Red Bean Mochi',                price:7},
+  {no:76, cat:'Mochi',        name:'Daifuku 2pcs Set',              price:13},
+  {no:77, cat:'Mochi',        name:'Daifuku 4pcs Set',              price:25},
+  {no:78, cat:'Mochi',        name:'Mini Mochi 2pcs Set',           price:8.8},
+  {no:79, cat:'Mochi',        name:'Warabimochi 50g',               price:5},
+  {no:80, cat:'Mochi',        name:'Warabimochi 200g',              price:20},
+  {no:81, cat:'Mochi',        name:'Sweet Potato Mont Blanc 3in1',  price:19.8},
+  {no:83, cat:'Hattendo Buns',name:'Custard Bun',                   price:6.9},
+  {no:84, cat:'Hattendo Buns',name:'Chocolate Bun',                 price:6.9},
+  {no:85, cat:'Hattendo Buns',name:'Matcha Bun',                    price:6.9},
+  {no:86, cat:'Hattendo Buns',name:'Azuki Bean Bun',                price:6.9},
+  {no:87, cat:'Hattendo Buns',name:'Whipped Cream Bun',             price:6.9},
+  {no:89, cat:'Butter Sand',  name:'Strawberry Butter Sand',        price:12.9},
+  {no:90, cat:'Butter Sand',  name:'Mikan Butter Sand',             price:12.9},
+  {no:91, cat:'Butter Sand',  name:'Matcha Butter Sand',            price:12.9},
+  {no:92, cat:'Cookie',       name:'Cookie',                        price:8},
+  {no:93, cat:'Order Cake',   name:'Order Cake',                    price:null},
+  {no:94, cat:'Cup Cake Order',name:'Cup Cake Order',               price:null},
+];
+
+// ══ START ══════════════════════════════════════════════════════
+// Always hide setup screen and load built-in items immediately
+document.getElementById('setup').classList.add('hidden');
+loadItems(false);
+</script>
+</body>
+</html>
